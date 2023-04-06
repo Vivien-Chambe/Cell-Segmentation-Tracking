@@ -60,17 +60,23 @@ cv.imshow('regions ambigues:',img_ambigu)
 # on utilise connectecComponents qui label un groupe de pixel
 # en fct leur connectivité cad meme intensité et contigus
 
-ret, markers = cv.connectedComponents(img_fg)
+output= cv.connectedComponentsWithStats(img_fg)
+(nblabel, labels, stats, centroids) = output
+print(nblabel)
+#print(labels)
+#print(stats)
+print(centroids)
+
 #cv.imshow('markers:',markers)
-markers = markers + 10
+labels = labels + 10
 
-markers[img_ambigu==255] = 0
+labels[img_ambigu==255] = 0
 
-markers = cv.watershed(img,markers)
+labels = cv.watershed(img,labels)
 
-img[markers==-1]=[0,255,255]
+img[labels==-1]=[0,255,255]
 
-img_fin = color.label2rgb(markers,bg_label=0)
+img_fin = color.label2rgb(labels,bg_label=0)
 
 cv.imshow('RESULTAT FINAL ',img_fin)
 
@@ -87,9 +93,9 @@ cv.waitKey(0)
 # moments d'une image = généralement des descripteurs de forme
 # -> on les utilise pour obtenir des caractéristiques globale d'une forme
 
-moments = cv.moments(img_bin)
+#moments = cv.moments(img_bin)
 
-print(moments)
+#print(moments)
 
 # empirically set neighborhood_size to 20
 #neighborhood_size = 2
