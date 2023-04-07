@@ -10,12 +10,12 @@ import cv2 as cv
 import numpy as np
 import csv
 
-from utils import convert_cv_qt
-from classes import Cell
+from segmentation import erode, dilate, opening, closing, labeliser_mask
+from annexes import convert_cv_qt, get_files
+from Classes import Cell
 
 
-puits = "puit03"
-path = "images/"+puits+"/t004.tif"
+puits = "images/puit03"
 
 
 class MainWindow(QMainWindow):
@@ -37,6 +37,8 @@ class MainWindow(QMainWindow):
 
         self.treshold = None
         self.cells = [] # Liste des cellules pour chaque image (liste de liste)
+        self.noms_fichiers = get_files(puits) # Liste des noms de fichiers
+        self.index_image = 0 # Index de l'image courante
 
 
         self.label = QLabel("Hello") # Label pour afficher l'image
@@ -128,12 +130,12 @@ class MainWindow(QMainWindow):
         layout_label.addWidget(self.exportBtn)
 
         ## ajouter une image 
-        self.image = cv.imread(path) # Charger l'image
+        self.image = cv.imread(puits + "/" + self.noms_fichiers[0],cv.IMREAD_GRAYSCALE) # Charger l'image
         self.label.setPixmap(convert_cv_qt(self.image)) # Afficher l'image
         
 
     def reset_image(self):
-        self.image = cv.imread(path)
+        self.image = cv.imread(puits + "/" +self.noms_fichiers[self.index_image],cv.IMREAD_GRAYSCALE)
         self.label.setPixmap(convert_cv_qt(self.image))
 
 
@@ -148,18 +150,15 @@ class MainWindow(QMainWindow):
     ## Créer un masque pour l'image avec treshold
     def mask(self):
         ## Convertir l'image en niveaux de gris
-        gray = cv.cvtColor(self.image, cv.COLOR_BGR2GRAY)
 
         ## Appliquer un treshold
-        ret, thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+        ret, thresh = cv.threshold(self.image, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
         #C = int(self.input_adaptive.text())
-        #thresh = cv.adaptiveThreshold(self.image,255,cv.ADAPTIVE_THRESH_MEAN_C,cv.THRESH_BINARY_INV,11,1)
+        #thresh = cv.adaptiveThreshold(self.image,255,cv.ADAPTIVE_THRESH_MEAN_C,cv.THRESH_BINARY_INV,21,5)
         self.treshold = thresh
         ## Mettre l'image dans le label
         self.label.setPixmap(convert_cv_qt(thresh))
-        
     
-
     def erosion(self):
         ## Vérifier si l'image a été treshold ou non
         if self.treshold is None: 
@@ -193,9 +192,11 @@ class MainWindow(QMainWindow):
         kernel = np.ones((5, 5), np.uint8)
         self.treshold = cv.morphologyEx(self.treshold, cv.MORPH_OPEN, kernel, iterations=1)
 
+        ## dilate(erode(img, kernel_size, iterations), kernel_size, iterations) autre façon
+
         ## Mettre l'image dans le label
         self.label.setPixmap(convert_cv_qt(self.treshold))
-  
+
     def closing(self):
             ## Vérifier si l'image a été treshold ou non
             if self.treshold is None: 
@@ -216,23 +217,17 @@ class MainWindow(QMainWindow):
         if self.treshold is None:
             return
 
-        (nblabel, labels, stats, centroids)= cv.connectedComponentsWithStats(self.treshold) # On veut récupérer le nombre de cellules, les labels, les stats et les centroides
-
-        print(nblabel)
-        print(centroids)
-
-        ## On veut afficher les centroides sur l'image
-        # for i in range(1, nblabel):
-        #     cv.circle(self.treshold, (int(centroids[i][0]), int(centroids[i][1])), 2, (0, 0, 255), -1)
-        ## Mettre l'image dans le label
-        #self.label.setPixmap(convert_cv_qt(self.treshold))
-
-        # On veut garder une trace des cellules et de leurs stats
-        cells = []
-        for i in range(1, nblabel):
-            cells.append(Cell(i, centroids[i][0],centroids[i][1], stats[i][4]))
-
+        cells = labeliser_mask(self.treshold)
         self.cells.append(cells)
+
+        ## On passe à l'image suivante
+        self.index_image += 1
+        if self.index_image < len(self.noms_fichiers):
+            self.reset_image()
+        else:
+            self.index_image = 0
+            self.reset_image()
+        self.treshold = None
 
     def export(self):
         ## Vérifier si l'image a été treshold ou non
@@ -254,7 +249,6 @@ class MainWindow(QMainWindow):
                     writer.writerow([cell.ID, cell.centroid, cell.surface])
 
 
-        
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

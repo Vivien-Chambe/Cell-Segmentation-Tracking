@@ -13,6 +13,13 @@ def convert_cv_qt(cv_img):
         p = convert_to_Qt_format.scaled(640, 480, Qt.KeepAspectRatio)
         return QPixmap.fromImage(p)
 
- 
+## Fonction pour obtenur dans une liste les noms de tous les fichiers d'un dossier
+def get_files(path):
+        import os
+        files = []
+        for file in os.listdir(path):
+                if file.endswith(".tif"):
+                        files.append(file)
+        return files
 
 

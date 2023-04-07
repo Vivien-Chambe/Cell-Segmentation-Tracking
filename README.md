@@ -9,12 +9,15 @@ Pour pouvoir utiliser ce projet, il faut installer les bibliothèques suivantes 
 * OpenCV
 * Numpy
 * Scipy
+* Pyqt5
 
 ## Utilisation
 
 
 ### 1. Segmenter les cellules
 
+On a deux options 
+Soit on calcule toutes les coordonnées des cellules dans chaque image puis on réalise l'assignation 
 
 ### 2. Suivre les cellules
 
