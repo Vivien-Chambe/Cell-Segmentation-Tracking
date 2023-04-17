@@ -44,7 +44,7 @@ img_bg = cv.dilate(img_open,kernel,iterations = 1)
 # le fond (background) on verra pourquoi dans la suite
 
 # Affichage si besoin
-#cv.imshow('Apres dilation:',img_bg)
+cv.imshow('Apres dilation:',img_bg)
 
 # On veut ensuite
 # on utilise distanceTransform qui calcule la distance entre 
@@ -60,11 +60,20 @@ img_transform = cv.distanceTransform(img_open,cv.DIST_L2,5)
 # Pour cela on appelle threshold encore une fois
 # "comparé au pixel d'intensité max au centre on prend que les pixel > 50% de cette intensité"
 # -> cela forme nos cellules 
-ret, img_fg = cv.threshold(img_transform,0.5*img_transform.max(),255,0)
+
+ret, img_fg = cv.threshold(img_transform,0.40*img_transform.max(),255,0) 
+# SOLUTION DU PROBLEME (1)
+# ? on perd une cellule... Peut etre que c'est pcq on avance trop dans le img_transform 
+# on passe de 0.5 -> 0.40 -> C'EST BON
 # on pourrait utiliser erode mais on perdrait trop d'information...
 
 # Affichage si besoin
-#cv.imshow('Apres separation:',img_fg)
+cv.imshow('Apres separation:',img_fg)
+
+# SOLUTION DU PROBLEME (2)
+img_fg = cv.dilate(img_fg,kernel,iterations = 1)
+# Pb peut être du au fait que le sure fg de la cellule divisee en deux n'est pas convexe 
+# Du coup on dilate -> CA MARCHEEEEEEEEEEEEE 
 
 # On a notre foreground et notre background
 
@@ -75,7 +84,7 @@ img_fg = np.uint8(img_fg) # on cast le foreground car contient des float
 # Les zones ambigues sont la soustractions dedu fond et du premier plan
 img_ambigu = cv.subtract(img_bg,img_fg) 
 
-#Affichage si besoin
+# Affichage si besoin
 cv.imshow('regions ambigues:',img_ambigu)
 
 # Labelisation 
@@ -115,7 +124,7 @@ labels = cv.watershed(img,labels)
 
 # watershed associe -1 aux bords...
 # On peut changer ca en lui associant du jaune parn exemple
-img[labels==-1]=[0,255,255]
+img[labels==-1]=[255,255,0]
 
 # On converti les labels de notre image en couleurs rgb 
 img_fin = color.label2rgb(labels,bg_label=0)
@@ -124,3 +133,7 @@ cv.imshow('RESULTAT FINAL ',img_fin)
 
 cv.waitKey(0)
 
+# Je vois pas quoi changer... on perd une cellule (1) et une des cellules detectees
+# et consideree comme deux cellules (2) GSJGUOUZAGBOUBGOU  
+# -> probleme (1) reglé cf ligne 64 à 66
+# -> probleme (2) reglé cf ligne 71 à 74
