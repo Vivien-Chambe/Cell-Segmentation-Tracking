@@ -84,31 +84,45 @@ Cell(38,867.6938110749186, 983.1026058631921,	614),
 Cell(39,742.0, 1022.0,	27)
 ]
 
-def cost(ListeT0, ListeT1):
+def cost(ListeT0: list[Cell], ListeT1: list[Cell],marginD=float('inf')):
+    """
+    Renvoie une liste de paire de taille len(ListeT0), 
+    celle ci est l'assignation linéaire des point de ListeT0 avec ceux de Liste T1, 
+    les couples étant les indices de chaque cellule dans leur liste respective.
+    marginD peut être spécifié pour avoir une ROI autour de la cellule étudié, 
+    évitant l'évaluation de cellule trop eloignée, elle est par défaut à +inf mais peut être 
+    choisi si besoin (préférables)
+    """
     out=[]
     for i in range(0,len(ListeT0)):
         ix,iy=ListeT0[i].centroid
         isurf=ListeT0[i].surface
-        max=(0,0)
+        max=(-1,0)#couple initalisé aux valeurs de base
         for j in range(0,len(ListeT1)):
             jx,jy=ListeT1[j].centroid
             jsurf=ListeT1[j].surface
             #paramêtres de la note
             dist=np.sqrt(pow(ix-jx,2)+pow(iy-jy,2))
             surf=abs(isurf-jsurf)
+            if (dist<marginD):
             #calcul de la note, peut être modulé
-            if (surf==0):
-                surf=0.000000000000000000000000001
-            if (dist==0):
-                dist=0.000000000000000000000000001
-            grade=1/dist + 1/surf#changer le numérateur des fractions pour donner du poids à un paramêtre
-            #comparaison avec la note la plus haute
-            if (max[1]<grade and ListeT1[j].ID!=-1):
-                max=(j,grade)
-        ListeT1[max[0]].ID=-1
-        #ajoute l'assignation à la liste
-        print((i,max[0]))
-        out.append((i,max[0]))
-
+                if (surf==0):
+                    surf=0.000000000000000000000000001
+                if (dist==0):
+                    dist=0.000000000000000000000000001
+                grade=1/dist + 1/surf#changer le numérateur des fractions pour donner du poids à un paramêtre
+                #comparaison avec la note la plus haute
+                if (max[1]<grade and ListeT1[j].ID!=-1):
+                    max=(j,grade)
+        if max[1]>0:#cas où la note obtenue a été modifiée
+            ListeT1[max[0]].ID=-1 #on retire la cellule des cellules assignables
+            #ajoute l'assignation à la liste
+            print((i,max[0]))
+            out.append((i,max[0]))
+    for i in range(0,len(ListeT1)):
+        ListeT1[i].ID=i+1
     return out
+cost(L0,L1,1)
+cost(L0,L1,10)
+cost(L0,L1,100)
 cost(L0,L1)
