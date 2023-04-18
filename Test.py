@@ -1,3 +1,4 @@
+import textwrap
 import cv2 as cv
 import numpy as np
 import scipy as sp
@@ -106,11 +107,11 @@ output= cv.connectedComponentsWithStats(img_fg)
 #print(labels)
 #print(stats)
 # ptit print des centroids...
-print(centroids)
+#print(centroids)
 
 # Petit problème le background est d'intensité 0
-# Or on veut que seulement nos zônes ambigues soient d'intensite
-# 0 (pour la fonction watershed cf suite)
+# Or on veut que seulement nos zônes ambigues soient d'intensite 0
+# (pour la fonction watershed cf suite)
 # On augmente donc toutes les intensité de 10 par ex 
 labels = labels + 10
 
@@ -131,9 +132,39 @@ img_fin = color.label2rgb(labels,bg_label=0)
 
 cv.imshow('RESULTAT FINAL ',img_fin)
 
-cv.waitKey(0)
-
 # Je vois pas quoi changer... on perd une cellule (1) et une des cellules detectees
 # et consideree comme deux cellules (2) GSJGUOUZAGBOUBGOU  
 # -> probleme (1) reglé cf ligne 64 à 66
 # -> probleme (2) reglé cf ligne 71 à 74
+
+# Essai avec les Bounding Box avec SelectRois
+# CA MARCHE PAAAAAAAAAAAAAAAASSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+# -> On fait à la main ca marche ? cf dernier plot
+
+print(centroids)
+print(labels[10,10])
+
+height = img_fin.shape[0]
+width = img_fin.shape[1]
+print(height,width)
+w_bb = stats[labels[10,10],cv.CC_STAT_WIDTH]
+print(w_bb)
+h_bb = stats[labels[10,10],cv.CC_STAT_HEIGHT]
+print(h_bb)
+
+cent_cell = centroids[10]
+
+x = int(cent_cell[0]-1.5*w_bb)
+y = int(cent_cell[0]+1.5*w_bb)
+z = int(cent_cell[1]-1.5*h_bb)
+t = int(cent_cell[1]+1.5*h_bb)
+
+cv.rectangle(img_fin, (x, z), (y, t), (255,255,255), 2)
+
+#cropped = img[x:y,z:t]
+
+cv.imshow('avec une bb normalement',img_fin)
+
+#hold window
+cv.waitKey(0)
+
