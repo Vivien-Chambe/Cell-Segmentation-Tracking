@@ -140,31 +140,42 @@ cv.imshow('RESULTAT FINAL ',img_fin)
 # Essai avec les Bounding Box avec SelectRois
 # CA MARCHE PAAAAAAAAAAAAAAAASSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
 # -> On fait à la main ca marche ? cf dernier plot
+# Changer avec un circle!!! 
 
 print(centroids)
-print(labels[10,10])
+label_list = []
+for i in range(labels.shape[0]):
+  for j in range(labels.shape[1]):
+    if((labels[i,j] != -1) and (labels[i,j] != 10)):
+      if(labels[i,j] not in label_list):
+        label_list.append(labels[i,j])
 
-height = img_fin.shape[0]
-width = img_fin.shape[1]
-print(height,width)
-w_bb = stats[labels[10,10],cv.CC_STAT_WIDTH]
-print(w_bb)
-h_bb = stats[labels[10,10],cv.CC_STAT_HEIGHT]
-print(h_bb)
+print("JE SUIS LABEL",labels)
+print(len(label_list))
 
-cent_cell = centroids[10]
+for i in range(len(label_list)):
+  height = img_fin.shape[0]
+  width = img_fin.shape[1]
+  #print(height,width)
 
-x = int(cent_cell[0]-1.5*w_bb)
-y = int(cent_cell[0]+1.5*w_bb)
-z = int(cent_cell[1]-1.5*h_bb)
-t = int(cent_cell[1]+1.5*h_bb)
+  w_bb = stats[i,cv.CC_STAT_WIDTH]
+  #print(w_bb)
 
-cv.rectangle(img_fin, (x, z), (y, t), (255,255,255), 2)
+  h_bb = stats[i,cv.CC_STAT_HEIGHT]
+  #print(h_bb)
+
+  cent_cell = centroids[i]
+
+  x = int(cent_cell[0]-1.5*w_bb)
+  y = int(cent_cell[0]+1.5*w_bb)
+  z = int(cent_cell[1]-1.5*h_bb)
+  t = int(cent_cell[1]+1.5*h_bb)
+
+  # verifier dans le code de Vivien s'il n'ya pas de fonction qui fait déjà ca 
+  cv.rectangle(img_fin, (x, z), (y, t), (255,255,255), 2)
 
 #cropped = img[x:y,z:t]
 
 cv.imshow('avec une bb normalement',img_fin)
 
-#hold window
 cv.waitKey(0)
-
