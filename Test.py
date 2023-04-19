@@ -143,12 +143,17 @@ cv.imshow('RESULTAT FINAL ',img_fin)
 # Changer avec un circle!!! 
 
 print(centroids)
-label_list = []
-for i in range(labels.shape[0]):
-  for j in range(labels.shape[1]):
-    if((labels[i,j] != -1) and (labels[i,j] != 10)):
-      if(labels[i,j] not in label_list):
-        label_list.append(labels[i,j])
+
+def matrix_to_list(matrix):
+  matrix_list = []
+  for i in range(matrix.shape[0]):
+    for j in range(matrix.shape[1]):
+      if((matrix[i,j] != -1) and (matrix[i,j] != 10)):
+        if(matrix[i,j] not in matrix_list):
+          matrix_list.append(matrix[i,j])
+  return matrix_list
+
+label_list = matrix_to_list(labels)
 
 print("JE SUIS LABEL",labels)
 print(len(label_list))
@@ -176,6 +181,52 @@ for i in range(len(label_list)):
 
 #cropped = img[x:y,z:t]
 
-cv.imshow('avec une bb normalement',img_fin)
+#cv.imshow('avec une bb normalement',img_fin)
+
+print(label_list)
+
+"""paths=([x for x in os.walk(folder)])
+    for i in paths:
+        i[2].sort()
+        for filename in i[2]:
+            path=i[0]+"/"+filename
+            path_out=i[0]+"_clean/"
+            print(path)
+            print(filename)
+            img=cv.imread(path)"""
+
+def detection_discord(img):
+            # Nombre max d'iteration est 3
+            for i in range(3):
+              img_erod = cv.erode(img_open,kernel,iterations = 1)
+              output= cv.connectedComponentsWithStats(img_erod)
+              (nblabel, labels2, stats, centroids) = output
+              label_list2 = matrix_to_list(labels2)
+              # Si le nb de labels est different alors on a pls centroids
+              if (len(label_list)!=len(label_list2)):
+                # On parcours la matrice 
+                for i in range(labels.shape[0]):
+                  for j in range(labels.shape[1]):
+                    # On initialise le nb de centroids et une liste des labels déjà observés
+                    nb_cent = 0
+                    labels_vus =[]
+                    # Si ce qu'on regarde est different du label du fond et des bords
+                    if ((labels[i,j]!=-1) and (labels[i,j]!=10)):
+                      labeli = labels[i,j]
+                      # On regarde les meme pixels de l'autre matrice
+                      for k in range(labels.shape[0]):
+                        for l in range(labels.shape[1]):
+                          # Si c'est bien le meme label
+                          if (labels[k,l]==labeli):
+                            if(labels2[k,l]!=10 and labels2[k,l] not in labels_vus):
+                              labels_vus.append(labels2[k,l])
+                              nb_cent +=1
+                    # 
+                    
+
+              #label_list = label_list2
+                 
+            cv.imwrite(path_out+filename,img_norm)
+
 
 cv.waitKey(0)
