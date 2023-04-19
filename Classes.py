@@ -13,4 +13,33 @@ class Cell:
         self.centroid = (x, y)
         self.surface = surface
 
+    def getID(self):
+        return self.ID
+    
+    def getCentroid(self):
+        return self.centroid
+    
+    def getSurface(self):
+        return self.surface
+    
+    def setID(self, ID):
+        self.ID = ID
+
+    def setCentroid(self, x, y):
+        self.centroid = (x, y)
+    
+    def setSurface(self, surface):
+        self.surface = surface
+        
+
+
+class Labeliser:
+    def __init__(self, cells):
+        self.cells = cells
+        self.labels = []
+
+        
+
+    
+
 

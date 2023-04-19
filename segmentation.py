@@ -18,8 +18,7 @@ def closing (img, kernel_size = 3, iterations = 1):
 
 def labeliser_mask (img):
     (nblabel, labels, stats, centroids)= cv.connectedComponentsWithStats(img) # On veut récupérer le nombre de cellules, les labels, les stats et les centroides
-    print(nblabel)
-    print(centroids)
+
     ## On veut afficher les centroides sur l'image
     # for i in range(1, nblabel):
     #     cv.circle(self.treshold, (int(centroids[i][0]), int(centroids[i][1])), 2, (0, 0, 255), -1)

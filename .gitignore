@@ -1,3 +1,4 @@
 test*
 *.csv
 __pycache__
+images/puit*/tresholds

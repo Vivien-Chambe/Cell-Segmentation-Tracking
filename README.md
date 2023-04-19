@@ -13,6 +13,9 @@ Pour pouvoir utiliser ce projet, il faut installer les bibliothèques suivantes 
 
 ## Utilisation
 
+### 0. Création d'une interface graphique
+
+Pour créer une interface graphique, il faut utiliser la bibliothèque Pyqt5. Nous n'avons pas utilisé QtDesigner. Cette interface nous permettra de traiter et segmenter les images plus simplement.
 
 ### 1. Segmenter les cellules
 
@@ -24,7 +27,7 @@ Soit on calcule toutes les coordonnées des cellules dans chaque image puis on r
 ## Auteurs
 
 * **Vivien Chambe** [neiviv-dev]
-* **Ilaria** [ilaria-nissotti]
-* **Mai-san** [Mai-san2901]
+* **Ilaria Nissotti** [ilaria-nissotti]
+* **Maissane Bouchema** [Mai-san2901]
 * **Judicaël Marion** []
 * **Lilou Bouvier** [bouvieli]
