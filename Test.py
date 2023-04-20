@@ -23,7 +23,7 @@ img_norm = cv.normalize(img_gray, None, 0, 255, cv.NORM_MINMAX)
 ret, img_bin = cv.threshold( img_norm, 122,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
 
 # Affichage si besoin
-#cv.imshow('Apres binarisation:',img_bin)
+cv.imshow('Apres binarisation:',img_bin)
 
 # On enleve les bruits dès le debut avec l'opening
 kernel = np.ones((5,5),np.uint8)
@@ -45,7 +45,7 @@ img_bg = cv.dilate(img_open,kernel,iterations = 1)
 # le fond (background) on verra pourquoi dans la suite
 
 # Affichage si besoin
-cv.imshow('Apres dilation:',img_bg)
+#cv.imshow('Apres dilation:',img_bg)
 
 # On veut ensuite
 # on utilise distanceTransform qui calcule la distance entre 
@@ -69,7 +69,7 @@ ret, img_fg = cv.threshold(img_transform,0.40*img_transform.max(),255,0)
 # on pourrait utiliser erode mais on perdrait trop d'information...
 
 # Affichage si besoin
-cv.imshow('Apres separation:',img_fg)
+#cv.imshow('Apres separation:',img_fg)
 
 # SOLUTION DU PROBLEME (2)
 img_fg = cv.dilate(img_fg,kernel,iterations = 1)
@@ -86,7 +86,7 @@ img_fg = np.uint8(img_fg) # on cast le foreground car contient des float
 img_ambigu = cv.subtract(img_bg,img_fg) 
 
 # Affichage si besoin
-cv.imshow('regions ambigues:',img_ambigu)
+#cv.imshow('regions ambigues:',img_ambigu)
 
 # Labelisation 
 # On utilise connectecComponentswithStats qui associe a un groupe de pixel
@@ -130,7 +130,7 @@ img[labels==-1]=[255,255,0]
 # On converti les labels de notre image en couleurs rgb 
 img_fin = color.label2rgb(labels,bg_label=0)
 
-cv.imshow('RESULTAT FINAL ',img_fin)
+#cv.imshow('RESULTAT FINAL ',img_fin)
 
 # Je vois pas quoi changer... on perd une cellule (1) et une des cellules detectees
 # et consideree comme deux cellules (2) GSJGUOUZAGBOUBGOU  
@@ -142,7 +142,7 @@ cv.imshow('RESULTAT FINAL ',img_fin)
 # -> On fait à la main ca marche ? cf dernier plot
 # Changer avec un circle!!! 
 
-print(centroids)
+#print(centroids)
 
 def matrix_to_list(matrix):
   matrix_list = []
@@ -155,9 +155,9 @@ def matrix_to_list(matrix):
 
 label_list = matrix_to_list(labels)
 
-print("JE SUIS LABEL",labels)
-print(len(label_list))
-
+#print("JE SUIS LABEL",labels)
+#print(len(label_list))
+"""
 for i in range(len(label_list)):
   height = img_fin.shape[0]
   width = img_fin.shape[1]
@@ -178,6 +178,7 @@ for i in range(len(label_list)):
 
   # verifier dans le code de Vivien s'il n'ya pas de fonction qui fait déjà ca 
   cv.rectangle(img_fin, (x, z), (y, t), (255,255,255), 2)
+"""
 
 #cropped = img[x:y,z:t]
 
@@ -275,8 +276,10 @@ def detection_newcents(img,nb_it):
   label_list = matrix_to_list(labels)
 
   # On effectue nb_it erosions sur l'image
-  for i in range(nb_it):
-    img_erod = cv.erode(img_open,kernel,iterations = i)
+
+  img_erod = cv.erode(img,kernel,iterations = 1)
+  for i in range(2,nb_it):
+    img_erod = cv.erode(img_erod,kernel,iterations = i)
     output= cv.connectedComponentsWithStats(img_erod)
 
   # On recupere les stats de l'image erodee  
@@ -284,15 +287,53 @@ def detection_newcents(img,nb_it):
   label_list2 = matrix_to_list(labels2)
 
   # On cherche un label qui n'existe pas dans la liste des labels et on l'associe a une des deux cellules
-  col1 = label_list[0]
-  col2 = len(label_list) + 11
 
   # On cherche les centroids ayant le meme labels dans l'image erodee 
   # Methode ou on "copie colle" une partie de l'image
-  labels_vus = []
-  col1 = labels[]
+  # On parcourt l'image erodee
+  # Comment parcourir 
+  new_label = len(label_list) + 11
+  for label_act in label_list: # pour tous les labels dans la liste des labels de l'image non erodee
+    nb_cents=0 
+    cents_trouve = []                
+    #while (nb_cents != 2): # tant que le nb de centroids est diff de 2
+    for i in range(labels.shape[0]): # On parcours la matrice des labels de l'image non erodee
+      for j in range(labels.shape[1]):
+        print("Je cherche les centroids et j'en suis a ",(i,j))
+        if (labels[i,j]==label_act): # si le label du pixel qu'on regarde est egale au label que l'on etudie  
+          if ((i,j) in centroids2): # et si ses coord sont dans la liste de centroids 
+            nb_cents+=1 # on ajoute 1 au nb de centroids
+            cents_trouve.append((i,j))
+    
+    # On met le même label pour les deux centroids...
+    # On a trouvé deux centroids maintenant on peux modifier l'image avant erosion 
+    if (nb_cents == 2):
+      for i in range(labels.shape[0]): # On parcours la matrice des labels de l'image non erodee
+        for j in range(labels.shape[1]):
+          print("Je modifie l'image avant erosion et j'en suis a ",(i,j))
+          if (labels2[i,j]==10):
+            labels[i,j] = 10
+          elif (labels2[i,j]==-1):
+            labels[i,j] = -1
+          elif (labels2[i,j]==label_act): # Si on est au label actuel on copie le contenu de l'image erodee dans l'image originale
+            if (i > int(int((cents_trouve[0][0]) + int(cents_trouve[1][0]))/2) and j > int(int((cents_trouve[0][1]) + int(cents_trouve[1][1]))/2)):
+              labels[i,j] = new_label
+    
+      new_label+=1
 
+      for i in range(labels.shape[0]): # On parcours la matrice des labels et on binarise
+        for j in range(labels.shape[1]):
+          print("Je binarise l'image obtenue et j'en suis a ",(i,j))
+          if (labels2[i,j]==10 or labels2[i,j]==-1):
+            labels[i,j] = 1
+          else:
+            labels[i,j] = 0
 
-        
-        
+  return labels
+
+#cv.imshow('Apres binarisation:',img_bin)
+
+img_newcents = detection_newcents(img_bin,3)
+
+#cv.imshow('Apres binarisation:',img_newcents)
 cv.waitKey(0)
