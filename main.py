@@ -12,12 +12,12 @@ import csv
 from time import sleep
 
 from segmentation import erode, dilate, opening, closing, labeliser_mask
-from annexes import convert_cv_qt, get_files, distance, solve_linear_assignment, cost
+from annexes import convert_cv_qt, get_files, distance, solve_linear_assignment, Segment,updateIDs,getHighestID
 from Classes import Cell
 
 
 colors = [(255,0,0),(0,255,0),(0,0,255),(255,255,0),(255,0,255),(0,255,255),(255,128,0),(128,255,0),(0,255,128),(0,128,255),(128,0,255),(255,0,128),(0,255,255),(255,255,0),(255,0,255),(0,255,255),(255,128,0),(128,255,0),(0,255,128),(0,128,255),(128,0,255),(255,0,128),(0,255,255),(255,255,0),(255,0,255),(0,255,255)]
-puits = "images/puit02"
+puits = "images/puit03"
 
 
 class MainWindow(QMainWindow):
@@ -121,6 +121,11 @@ class MainWindow(QMainWindow):
         self.segmentationAllBtn = QPushButton("Segmenter toutes les images")
         self.segmentationAllBtn.pressed.connect(self.segmenter_all)
         layout_label.addWidget(self.segmentationAllBtn)
+
+        ## Ajouter un input pour changer la valeur de la range 
+        self.input_range = QLineEdit()
+        self.input_range.setText(str(10))
+        layout_edit.addWidget(self.input_range)
 
         ## Bouton pour faire l'assignation des cellules
         self.assignationBtn = QPushButton("Assigner")
@@ -267,12 +272,6 @@ class MainWindow(QMainWindow):
             # je veux une barre de progression
             print(f"Segmentation de l'image {self.index_image + 1}/{len(self.noms_fichiers)} terminée")
 
-            
-
-            
-
-
-
         print ("Segmentation terminée")
         print (f"Nombre d'images traités: {len(self.segmentations)}")
         print (f"Nombre max de cellules: {max (len(cells) for cells in self.segmentations)}")
@@ -281,19 +280,34 @@ class MainWindow(QMainWindow):
 
     ## On veut que cette fonction résolve un problème d'assignation linéaire sur les cellules détectées dans chaque image 
     def assigner_all (self):
-
+        maxIDs = 0
         for cell in self.segmentations[0]:
             self.final[cell.ID] = [cell]
         for i in range(1,len(self.segmentations)):
-            res = solve_linear_assignment(self.segmentations[i-1], self.segmentations[i])
-            #res = cost(self.segmentations[i-1], self.segmentations[i],10)
-            print (res)
-            for corres in res:
-                if corres[0] not in self.final.keys():
-                    self.final[corres[0]] = []
-                    self.final[corres[0]].append(self.segmentations[i][corres[1]-1])
+            #V1
+            #res = solve_linear_assignment(self.segmentations[i-1], self.segmentations[i])
+            # print (res)
+            # for corres in res:
+            #     if corres[0] not in self.final.keys():
+            #         self.final[corres[0]] = []
+            #         self.final[corres[0]].append(self.segmentations[i][corres[1]-1])
+            #     else:
+            #         self.final[corres[0]].append(self.segmentations[i][corres[1]-1])
+            
+            #V2
+            res = Segment(self.segmentations[i-1], self.segmentations[i],int(self.input_range.text()))
+            a=getHighestID(self.segmentations[i-1])
+            if  a> maxIDs:
+                maxIDs = a
+            updateIDs(self.segmentations[i],maxIDs)
+            
+            for corres in self.segmentations[i]:
+                if corres.ID not in self.final.keys():
+                    self.final[corres.ID] = []
+                    self.final[corres.ID].append(corres)
                 else:
-                    self.final[corres[0]].append(self.segmentations[i][corres[1]-1])
+                    self.final[corres.ID].append(corres)
+            
 
 
 
@@ -322,35 +336,34 @@ class MainWindow(QMainWindow):
                 pt1 = (int(cell[i].centroid[0]),int(cell[i].centroid[1]))
                 pt2 = (int(cell[i+1].centroid[0]),int(cell[i+1].centroid[1]))
                 cv.line(image, pt1, pt2, color, 2)
-            cv.imshow("Hop",image)
-            cv.waitKey(0)
-            cv.destroyAllWindows()
             self.label.setPixmap(convert_cv_qt(image))
             self.index_image += 1
+        cv.imshow("Hop",image)
 
-
-
-                
-
+        #enregistrer le résultat
+        path = puits + "/trajectoires/trajectoire_" +str(self.input_range.text())+".jpg"
+        print(path)
+        cv.imwrite(path, image)
+        print("Image enregistrée")
+        
+        self.final = {}
     def export(self):
-        ## Vérifier si l'image a été treshold ou non
-        if self.treshold is None:
-            return
-
-        ## Vérifier si l'image a été labelisée ou non
-        if len(self.segmentations) == 0:
-            return
 
         ## On veut exporter les coordonnées des cellules dans un fichier csv
-        ## On veut exporter le numéro de la cellule, le centre de la cellule
-        
-        with open(f'{puits}.csv', 'w', newline='') as file:
+        ## On veut exporter le numéro de la cellule, le centre de la cellule 
+
+        #On ouvre un fichier csv
+        with open(puits + "/trajectoires/trajectoire_" +str(self.input_range.text())+".csv", 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(["Numéro de la cellule", "Centre de la cellule", "Surface"])
-            for cells in self.segmentations:
-                for cell in cells:
-                    writer.writerow([cell.ID, cell.centroid, cell.surface])
-        print ("Exportation terminée")
+            #On écrit le header
+            writer.writerow(["ID", "Centre", "Temps", "Aire"])
+            #On écrit les données
+            for cell in self.final.values():
+                writer.writerow([cell[0].ID, cell[0].centroid, 0,   cell[0].surface])
+                for i in range(len(cell)-1):
+                    writer.writerow([cell[i].ID, cell[i].centroid, i+1, cell[i].surface])
+            
+        print("Fichier enregistré")
 
 
 if __name__ == "__main__":
