@@ -195,6 +195,7 @@ print(label_list)
             print(filename)
             img=cv.imread(path)"""
 
+"""
 def detection_discord(img):
             # Nombre max d'iteration est 3
             for i in range(3):
@@ -224,9 +225,74 @@ def detection_discord(img):
                     # 
                     
 
-              #label_list = label_list2
+              label_list = label_list2
                  
-            cv.imwrite(path_out+filename,img_norm)
+            cv.imwrite(path_out+filename,img_norm)"""
+"""
+def detection_newcents(img,nb_it):
+            output= cv.connectedComponentsWithStats(img)
+            # On recupere les stats de l'image sans erosion 
+            (nblabel, labels, stats, centroids) = output
+            label_list = matrix_to_list(labels)
+
+            # On effectue nb_it erosions sur l'image
+            for i in range(nb_it):
+              img_erod = cv.erode(img_open,kernel,iterations = i)
+              output= cv.connectedComponentsWithStats(img_erod)
+            
+            # On recupere les stats de l'image erodee  
+            (nblabel2, labels2, stats2, centroids2) = output
+            label_list2 = matrix_to_list(labels2)
+            
+            # On cherche les centroids ayant le meme labels dans l'image erodee 
+            labels_vus = []
+            new_cents = []
+            for cent in centroids2:
+              cent_int = (int(cent[0]),int(cent[1]))
+              for label in labels2:
+                if (labels[cent_int[0],cent_int[1]] not in labels_vus):
+                  new_cents.append((cent_int[0],cent_int[1]))
+                else:
+                  labels_vus.append(labels[cent_int[0],cent_int[1]])
+
+            # On associe le centroid dans l'image pas érodée a l'image érodée
 
 
+            # On cherche un label qui n'existe pas dans la liste des labels et on l'associe a une des deux cellules
+            i = len(label_list)+11
+
+            
+               
+
+            return new_cents
+"""
+
+def detection_newcents(img,nb_it):
+  output= cv.connectedComponentsWithStats(img)
+
+  # On recupere les stats de l'image sans erosion 
+  (nblabel, labels, stats, centroids) = output
+  label_list = matrix_to_list(labels)
+
+  # On effectue nb_it erosions sur l'image
+  for i in range(nb_it):
+    img_erod = cv.erode(img_open,kernel,iterations = i)
+    output= cv.connectedComponentsWithStats(img_erod)
+
+  # On recupere les stats de l'image erodee  
+  (nblabel2, labels2, stats2, centroids2) = output
+  label_list2 = matrix_to_list(labels2)
+
+  # On cherche un label qui n'existe pas dans la liste des labels et on l'associe a une des deux cellules
+  col1 = label_list[0]
+  col2 = len(label_list) + 11
+
+  # On cherche les centroids ayant le meme labels dans l'image erodee 
+  # Methode ou on "copie colle" une partie de l'image
+  labels_vus = []
+  col1 = labels[]
+
+
+        
+        
 cv.waitKey(0)
