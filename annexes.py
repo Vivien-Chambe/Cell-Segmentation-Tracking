@@ -51,7 +51,19 @@ def solve_linear_assignment (cells1, cells2):
                 cells2[corr[1]-1].ID = corr[0]
         return correspondance
 
-def cost(ListeT0: list[Cell], ListeT1: list[Cell],marginD=float('inf')):
+def cost(dist:float,surf:float,ver=0):
+    match ver:
+        case 0:
+            return 1.5/dist+1/surf
+        case 1:
+            if surf<10:
+                return 2/dist
+            else:
+                return 1/dist
+        case _ :
+            return 0
+
+def Segment(ListeT0: list[Cell], ListeT1: list[Cell],marginD=float('inf'),ver=0):
     """
     Renvoie une liste de paire de taille len(ListeT0), 
     celle ci est l'assignation linéaire des point de ListeT0 avec ceux de Liste T1, 
@@ -70,25 +82,44 @@ def cost(ListeT0: list[Cell], ListeT1: list[Cell],marginD=float('inf')):
             jsurf=ListeT1[j].surface
             #paramêtres de la note
             dist=np.sqrt(pow(ix-jx,2)+pow(iy-jy,2))
-            surf=abs(isurf-jsurf)
             if (dist<marginD):
             #calcul de la note, peut être modulé
+                surf=abs(isurf-jsurf)
                 if (surf==0):
                     surf=0.000000000000000000000000001
                 if (dist==0):
                     dist=0.000000000000000000000000001
-                grade=1/dist + 1/surf#changer le numérateur des fractions pour donner du poids à un paramêtre
+                grade =cost(dist,surf,ver)
                 #comparaison avec la note la plus haute
                 if (max[1]<grade and ListeT1[j].ID!=-1):
                     max=(j,grade)
         if max[1]>0:#cas où la note obtenue a été modifiée
             ListeT1[max[0]].ID=-1 #on retire la cellule des cellules assignables
             #ajoute l'assignation à la liste
+            print((i,max[0]))
             out.append((i,max[0]))
     for i in range(0,len(ListeT1)):
-        ListeT1[i].ID=i+1
-    
+        ListeT1[i].ID=0
+    for i in out:
+        ListeT1[i[1]].ID=ListeT0[i[0]].ID
     return out
+
+def getHighestID(ListeTi:list[Cell]):
+    #/!\ Il faut quand même comparer la sortie avec celle du temps précédent 
+    maxIDs=0
+    for i in ListeTi:
+        if i.ID>maxIDs:
+            maxIDs=i.ID
+    return maxIDs
+
+def updateIDs(ListeT1:list[Cell],maxIDs):
+    it=1
+    for i in ListeT1:
+        if i.ID==0:
+            #on crée un nouveau ID pour les cellules qui n'en ont pas afin de créer un nouveau tracé
+            i.ID=maxIDs+it
+            it+=1
+
 
 print("annexes.py loaded")
 
