@@ -86,7 +86,7 @@ Cell(39,742.0, 1022.0,	27)
 def cost(dist:float,surf:float,ver=0):
     match ver:
         case 0:
-            return 1/dist+1/surf
+            return 1.5/dist+1/surf
         case 1:
             if surf<10:
                 return 2/dist
@@ -134,9 +134,26 @@ def Segment(ListeT0: list[Cell], ListeT1: list[Cell],marginD=float('inf')):
         ListeT1[i].ID=0
     for i in out:
         ListeT1[i[1]].ID=ListeT0[i[0]].ID
-    for i in range(0,len(ListeT1)):
-        print(ListeT1[i].ID)
     return out
+
+def getHighestID(ListeTi:list[Cell]):
+    #/!\ Il faut quand même comparer la sortie avec celle du temps précédent 
+    out=0
+    for i in ListeTi:
+        if i.ID>out:
+            out=i.ID
+    return out
+
+def updateIDs(ListeT1:list[Cell],maxIDs):
+    it=1
+    for i in ListeT1:
+        if i.ID==0:
+            #on crée un nouveau ID pour les cellules qui n'en ont pas afin de créer un nouveau tracé
+            i.ID=maxIDs+it
+            it+=1
+
+        
+
 
 Segment(L0,L1,1)
 #Segment(L0,L1,100)
