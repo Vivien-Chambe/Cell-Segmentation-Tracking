@@ -29,5 +29,5 @@ Soit on calcule toutes les coordonnées des cellules dans chaque image puis on r
 * **Vivien Chambe** [neiviv-dev]
 * **Ilaria Nissotti** [ilaria-nissotti]
 * **Maissane Bouchema** [Mai-san2901]
-* **Judicaël Marion** []
+* **Judicaël Marion** [@MarionauteCosmonaute]
 * **Lilou Bouvier** [bouvieli]
