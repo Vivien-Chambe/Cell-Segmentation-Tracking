@@ -1,0 +1,5 @@
+test*
+*.csv
+__pycache__
+images/puit*/tresholds
+images/puit*/trajectoires
