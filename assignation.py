@@ -134,6 +134,7 @@ def Segment(ListeT0: list[Cell], ListeT1: list[Cell],marginD=float('inf')):
         ListeT1[i].ID=0
     for i in out:
         ListeT1[i[1]].ID=ListeT0[i[0]].ID
+        ListeT1[i[1]].time=ListeT0[i[0]].time
     return out
 
 def getHighestID(ListeTi:list[Cell]):
@@ -144,17 +145,21 @@ def getHighestID(ListeTi:list[Cell]):
             out=i.ID
     return out
 
-def updateIDs(ListeT1:list[Cell],maxIDs):
+def updateIDs(ListeT1:list[Cell],maxIDs,time):
     it=1
     for i in ListeT1:
         if i.ID==0:
             #on crée un nouveau ID pour les cellules qui n'en ont pas afin de créer un nouveau tracé
             i.ID=maxIDs+it
             it+=1
+            i.time=time
+        print(i.ID)
 
-        
 
 
 Segment(L0,L1,1)
+maxIDs=getHighestID(L0)
+updateIDs(L1,maxIDs,1000)
+print("Id le plus haut :",getHighestID(L1))
 #Segment(L0,L1,100)
 #Segment(L0,L1)
