@@ -398,7 +398,7 @@ def detection_newcents(img,nb_it):
         mes_cents_fin.append(mes_cents[1])
         milieu = ((mes_cents[0][0] + mes_cents[0][1])/2,(mes_cents[1][0] + mes_cents[1][1])/2)
         for i in pix_mm_labels[0]:
-          for j in pix_mm_labels[j]:
+          for j in pix_mm_labels[1]:
 
             # Si mes cellules sont alignees horizontalement
             if ( mes_cents[0][0] == mes_cents[1][0] ):
