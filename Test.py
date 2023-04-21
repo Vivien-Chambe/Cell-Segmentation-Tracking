@@ -356,18 +356,19 @@ def detection_newcents(img,nb_it):
   # liste[1] les indices j __________________________________
 
 def detection_newcents(img,nb_it):
+
   output= cv.connectedComponentsWithStats(img)
-
+  (nblabel, labels, stats, centroids) = output
+  
   # On effectue nb_it erosions sur l'image
-
   img_erod = cv.erode(img,kernel,iterations = 1)
   for i in range(2,nb_it):
     img_erod = cv.erode(img_erod,kernel,iterations = i)
     output= cv.connectedComponentsWithStats(img_erod)
 
   # On recupere les stats de l'image erodee  
-  (nblabel, labels, stats, centroids) = output
-  label_list = matrix_to_list(labels)
+  (nblabel2, labels2, stats2, centroids2) = output
+  label_list = matrix_to_list(labels2)
 
   # On commence nos nouveaux labels à nblabels2+1 pour des raisons evidentes
   new_label = nblabel + 1
@@ -375,55 +376,61 @@ def detection_newcents(img,nb_it):
   # On utilise np.where pour determiner les indices des pixels de meme labels
   # Pour chaque labels de l'image errodée
   for label_act in label_list: 
-    # Je me créé un compteur de centroids et une liste de centroids
+    # Je me créé un compteur de centroids et deux listes de centroids
     nb_cent = 0  
     mes_cents = []
+    mes_cents_fin = []
     # Je recupere les indices de tous les pixels contenant le meme label
     pix_mm_labels = np.where(labels == label_act)
     
     # Pour chaque centroids dans l'image erodee
-    for cent in centroids:
+    for cent in centroids2:
       # Si il appartient a ma liste des pixels de meme labels
       if ( (int(cent[0]) in pix_mm_labels[0]) and (int(cent[1]) in pix_mm_labels[1]) ):
         # J'incrémente mon compteur
         nb_cent += 1
         mes_cents.append((int(cent[0]),int(cent[1])))
     
-    # Si j'ai trouvé 2 centroids 
-    # Je modifie ma matrice avec la methode du milieu
-    if (nb_cent == 2):
-      milieu = ((mes_cents[0][0] + mes_cents[0][1])/2,(mes_cents[1][0] + mes_cents[1][1])/2)
-      for i in pix_mm_labels[0]:
-        for j in pix_mm_labels[j]:
+      # Si j'ai trouvé 2 centroids 
+      # Je modifie ma matrice avec la methode du milieu
+      if (nb_cent == 2):
+        mes_cents_fin.append(mes_cents[0])
+        mes_cents_fin.append(mes_cents[1])
+        milieu = ((mes_cents[0][0] + mes_cents[0][1])/2,(mes_cents[1][0] + mes_cents[1][1])/2)
+        for i in pix_mm_labels[0]:
+          for j in pix_mm_labels[j]:
 
-          # Si mes cellules sont alignees horizontalement
-          if ( mes_cents[0][0] == mes_cents[1][0] ):
-            if ( i > milieu[0]):
+            # Si mes cellules sont alignees horizontalement
+            if ( mes_cents[0][0] == mes_cents[1][0] ):
+              if ( i > milieu[0]):
+                # Je change le label de ma deuxieme cellule
+                labels[i,j] = new_label
+
+            # Si mes cellules sont alignees verticalement
+            elif ( mes_cents[0][1] == mes_cents[1][1] ):
               # Je change le label de ma deuxieme cellule
-              labels[i,j] = new_label
+              if ( j > milieu[j]):
+                labels[i,j] = new_label
 
-          # Si mes cellules sont alignees verticalement
-          elif ( mes_cents[0][1] == mes_cents[1][1] ):
-            # Je change le label de ma deuxieme cellule
-            if ( j > milieu[j]):
-              labels[i,j] = new_label
+            # Si mes cellules sont alignees diagonalement
+            # cas ou le deuxieme centroid est en bas a droite
+            elif ( (mes_cents[0][0] < mes_cents[1][0]) and (mes_cents[0][1] < mes_cents[1][1]) ):
+              # Je change le label de ma deuxieme cellule
+              if ( (i > milieu[0]) and (j > milieu[1])):
+                labels[i,j] = new_label
 
-          # Si mes cellules sont alignees diagonalement
-          # cas ou le deuxieme centroid est en bas a droite
-          elif ( (mes_cents[0][0] < mes_cents[1][0]) and (mes_cents[0][1] < mes_cents[1][1]) ):
-            # Je change le label de ma deuxieme cellule
-            if ( (i > milieu[0]) and (j > milieu[1])):
-              labels[i,j] = new_label
+            # Si mes cellules sont alignees diagonalement
+            # cas ou le deuxieme centroid est en bas a gauche
+            elif ( (mes_cents[0][0] < mes_cents[1][0]) and (mes_cents[0][1] > mes_cents[1][1]) ):
+              # Je change le label de ma deuxieme cellule
+              if ( (i > milieu[0]) and (j < milieu[1])):
+                labels[i,j] = new_label
+      else :
+        mes_cents_fin.append(cent)
 
-          # Si mes cellules sont alignees diagonalement
-          # cas ou le deuxieme centroid est en bas a gauche
-          elif ( (mes_cents[0][0] < mes_cents[1][0]) and (mes_cents[0][1] > mes_cents[1][1]) ):
-            # Je change le label de ma deuxieme cellule
-            if ( (i > milieu[0]) and (j < milieu[1])):
-              labels[i,j] = new_label    
 
     new_label+=1
     pix_mm_labels = []
   
-  return centroids,labels
+  return mes_cents_fin,labels
 
