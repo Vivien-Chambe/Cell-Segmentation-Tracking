@@ -155,6 +155,9 @@ def updateIDs(ListeT1:list[Cell],maxIDs,time):
             i.time=time
         print(i.ID)
 
+def initT0(ListeT0:list[Cell]):
+    for i in ListeT0:
+        i.time=0
 
 
 Segment(L0,L1,1)
