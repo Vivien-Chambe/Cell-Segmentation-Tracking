@@ -23,7 +23,7 @@ img_norm = cv.normalize(img_gray, None, 0, 255, cv.NORM_MINMAX)
 ret, img_bin = cv.threshold( img_norm, 122,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
 
 # Affichage si besoin
-cv.imshow('Apres binarisation:',img_bin)
+#cv.imshow('Apres binarisation:',img_bin)
 
 # On enleve les bruits dès le debut avec l'opening
 kernel = np.ones((5,5),np.uint8)
@@ -155,6 +155,8 @@ def matrix_to_list(matrix):
 
 label_list = matrix_to_list(labels)
 
+#cv.waitKey(0) 
+
 #print("JE SUIS LABEL",labels)
 #print(len(label_list))
 """
@@ -269,7 +271,7 @@ def detection_newcents(img,nb_it):
 
             return new_cents
 """
-
+"""
 def detection_newcents(img,nb_it):
   output= cv.connectedComponentsWithStats(img)
 
@@ -332,18 +334,91 @@ def detection_newcents(img,nb_it):
             labels[i,j] = 0
 
   return labels
+"""
 
 #cv.imshow('Apres binarisation:',img_bin)
-
-img_newcents = detection_newcents(img_bin,3)
-
+#img_newcents = detection_newcents(img_bin,3)
 #cv.imshow('Apres binarisation:',img_newcents)
-cv.waitKey(0)
+
 
 # modifier juste centroids 
 # regarder dans matrice 
 
 # Trouver les centroids de meme labels
-# np.where meme labels -> j'ai les indices dans labels de meme labels ( une sorte de mask ?)
-# je regarde dans ces indices s'il ya deux centroids 
-# Si oui, je modifie l'image de base avec la technique du milieu des centroids 
+# On utilise np.where pour determiner les indices des pixels de meme labels -> j'ai les indices dans labels de meme labels ( une sorte de mask ?)
+# Maintenant, je regarde dans ces indices s'il ya deux centroids, si oui ce sont deux cellules qui se touchent... 
+# et donc je modifie l'image de base avec la technique du milieu des centroids 
+
+# IMPORTANT:
+  # liste = np.where(matrix = n) 
+  # renvoie une liste de liste
+  # liste[0] les indices i de elt de matrix respectant la cdt
+  # liste[1] les indices j __________________________________
+
+def detection_newcents(img,nb_it):
+  output= cv.connectedComponentsWithStats(img)
+
+  # On effectue nb_it erosions sur l'image
+
+  img_erod = cv.erode(img,kernel,iterations = 1)
+  for i in range(2,nb_it):
+    img_erod = cv.erode(img_erod,kernel,iterations = i)
+    output= cv.connectedComponentsWithStats(img_erod)
+
+  # On recupere les stats de l'image erodee  
+  (nblabel, labels, stats, centroids) = output
+  label_list = matrix_to_list(labels)
+
+  # On commence nos nouveaux labels à nblabels2+1 pour des raisons evidentes
+  new_label = nblabel + 1
+  # On utilise np.where pour determiner les indices des pixels de meme labels
+  # Pour chaque labels de l'image errodée
+  for label_act in label_list: 
+    # Je me créé un compteur de centroids et une liste de centroids
+    nb_cent = 0  
+    mes_cents = []
+    # Je recupere les indices de tous les pixels contenant le meme label
+    pix_mm_labels = np.where(labels = label_act)
+    
+    # Pour chaque centroids dans l'image erodee
+    for cent in centroids:
+      # Si il appartient a ma liste des pixels de meme labels
+      if ( (int(cent[0]) in pix_mm_labels[0]) and (int(cent[1]) in pix_mm_labels[1]) ):
+        # J'incrémente mon compteur
+        nb_cent += 1
+        mes_cents.append((int(cent[0]),int(cent[1])))
+    
+    # Si j'ai trouvé 2 centroids 
+    # Je modifie ma matrice avec la methode du milieu
+    if (nb_cent == 2):
+      milieu = ((mes_cents[0][0] + mes_cents[0][1])/2,(mes_cents[1][0] + mes_cents[1][1])/2)
+      for i in pix_mm_labels[0]:
+        for j in pix_mm_labels[j]:
+          # Si mes cellules sont alignees horizontalement
+          if ( mes_cents[0][0] == mes_cents[1][0] ):
+            if ( i > milieu[0]):
+              # Je change le label de ma deuxieme cellule
+              labels[i,j] = new_label
+          # Si mes cellules sont alignees verticalement
+          elif ( mes_cents[0][1] == mes_cents[1][1] ):
+            # Je change le label de ma deuxieme cellule
+            if ( j > milieu[j]):
+              labels[i,j] = new_label
+          # Si mes cellules sont alignees diagonalement
+          # cas ou le deuxieme centroid est en bas a droite
+          elif ( (mes_cents[0][0] < mes_cents[1][0]) and (mes_cents[0][1] < mes_cents[1][1]) ):
+            # Je change le label de ma deuxieme cellule
+            if ( (i > milieu[0]) and (j > milieu[1])):
+              labels[i,j] = new_label
+          # Si mes cellules sont alignees diagonalement
+          # cas ou le deuxieme centroid est en bas a gauche
+          elif ( (mes_cents[0][0] < mes_cents[1][0]) and (mes_cents[0][1] > mes_cents[1][1]) ):
+            # Je change le label de ma deuxieme cellule
+            if ( (i > milieu[0]) and (j < milieu[1])):
+              labels[i,j] = new_label    
+
+    new_label+=1
+    pix_mm_labels = []
+  
+  return centroids,labels
+
