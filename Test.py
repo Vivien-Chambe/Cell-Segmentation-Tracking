@@ -371,6 +371,7 @@ def detection_newcents(img,nb_it):
 
   # On commence nos nouveaux labels à nblabels2+1 pour des raisons evidentes
   new_label = nblabel + 1
+
   # On utilise np.where pour determiner les indices des pixels de meme labels
   # Pour chaque labels de l'image errodée
   for label_act in label_list: 
@@ -378,7 +379,7 @@ def detection_newcents(img,nb_it):
     nb_cent = 0  
     mes_cents = []
     # Je recupere les indices de tous les pixels contenant le meme label
-    pix_mm_labels = np.where(labels = label_act)
+    pix_mm_labels = np.where(labels == label_act)
     
     # Pour chaque centroids dans l'image erodee
     for cent in centroids:
@@ -394,22 +395,26 @@ def detection_newcents(img,nb_it):
       milieu = ((mes_cents[0][0] + mes_cents[0][1])/2,(mes_cents[1][0] + mes_cents[1][1])/2)
       for i in pix_mm_labels[0]:
         for j in pix_mm_labels[j]:
+
           # Si mes cellules sont alignees horizontalement
           if ( mes_cents[0][0] == mes_cents[1][0] ):
             if ( i > milieu[0]):
               # Je change le label de ma deuxieme cellule
               labels[i,j] = new_label
+
           # Si mes cellules sont alignees verticalement
           elif ( mes_cents[0][1] == mes_cents[1][1] ):
             # Je change le label de ma deuxieme cellule
             if ( j > milieu[j]):
               labels[i,j] = new_label
+
           # Si mes cellules sont alignees diagonalement
           # cas ou le deuxieme centroid est en bas a droite
           elif ( (mes_cents[0][0] < mes_cents[1][0]) and (mes_cents[0][1] < mes_cents[1][1]) ):
             # Je change le label de ma deuxieme cellule
             if ( (i > milieu[0]) and (j > milieu[1])):
               labels[i,j] = new_label
+
           # Si mes cellules sont alignees diagonalement
           # cas ou le deuxieme centroid est en bas a gauche
           elif ( (mes_cents[0][0] < mes_cents[1][0]) and (mes_cents[0][1] > mes_cents[1][1]) ):
