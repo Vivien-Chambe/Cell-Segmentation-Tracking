@@ -194,7 +194,8 @@ print(label_list)
             path_out=i[0]+"_clean/"
             print(path)
             print(filename)
-            img=cv.imread(path)"""
+            img=cv.imread(path)
+"""
 
 """
 def detection_discord(img):
@@ -229,6 +230,7 @@ def detection_discord(img):
               label_list = label_list2
                  
             cv.imwrite(path_out+filename,img_norm)"""
+
 """
 def detection_newcents(img,nb_it):
             output= cv.connectedComponentsWithStats(img)
@@ -337,3 +339,11 @@ img_newcents = detection_newcents(img_bin,3)
 
 #cv.imshow('Apres binarisation:',img_newcents)
 cv.waitKey(0)
+
+# modifier juste centroids 
+# regarder dans matrice 
+
+# Trouver les centroids de meme labels
+# np.where meme labels -> j'ai les indices dans labels de meme labels ( une sorte de mask ?)
+# je regarde dans ces indices s'il ya deux centroids 
+# Si oui, je modifie l'image de base avec la technique du milieu des centroids 
