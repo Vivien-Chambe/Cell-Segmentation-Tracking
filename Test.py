@@ -11,20 +11,22 @@ img = cv.imread("images/puit02/t000.tif")
 img_gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
 # Affichage si besoin
-#cv.imshow('Avant normalisation:',img_gray)
+cv.imshow('Avant normalisation:',img_gray)
 
 # Normalisation de l'image 
 img_norm = cv.normalize(img_gray, None, 0, 255, cv.NORM_MINMAX)
 
 # Affichage si besoin
-#cv.imshow('Apres normalisation:',img_norm)
+cv.imshow('Apres normalisation:',img_norm)
 
+cv.waitKey(0)
 # Binarisation ret = valeur du threshold
 ret, img_bin = cv.threshold( img_norm, 122,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
 
 # Affichage si besoin
 #cv.imshow('Apres binarisation:',img_bin)
 
+#cv.waitKey(0)
 # On enleve les bruits dès le debut avec l'opening
 kernel = np.ones((5,5),np.uint8)
 img_open = cv.morphologyEx(img_bin,cv.MORPH_OPEN,kernel,iterations=1)
@@ -186,7 +188,6 @@ for i in range(len(label_list)):
 
 #cv.imshow('avec une bb normalement',img_fin)
 
-print(label_list)
 
 """paths=([x for x in os.walk(folder)])
     for i in paths:
@@ -200,7 +201,7 @@ print(label_list)
 """
 
 """
-def detection_discord(img):
+def detection_cents(img):
             # Nombre max d'iteration est 3
             for i in range(3):
               img_erod = cv.erode(img_open,kernel,iterations = 1)
@@ -252,6 +253,7 @@ def detection_newcents(img,nb_it):
             # On cherche les centroids ayant le meme labels dans l'image erodee 
             labels_vus = []
             new_cents = []
+
             for cent in centroids2:
               cent_int = (int(cent[0]),int(cent[1]))
               for label in labels2:
@@ -355,6 +357,7 @@ def detection_newcents(img,nb_it):
   # liste[0] les indices i de elt de matrix respectant la cdt
   # liste[1] les indices j __________________________________
 
+"""
 def detection_newcents(img,nb_it):
 
   output= cv.connectedComponentsWithStats(img)
@@ -433,4 +436,82 @@ def detection_newcents(img,nb_it):
     pix_mm_labels = []
   
   return mes_cents_fin,labels
+"""
 
+def detection_newcents(img,nb_it):
+
+  output = cv.connectedComponentsWithStats(img)
+  (nblabel, labels, stats, centroids) = output
+  
+  # On effectue nb_it erosions sur l'image
+  img_erod = cv.erode(img,kernel,iterations = 1)
+  for i in range(2,nb_it):
+    img_erod = cv.erode(img_erod,kernel,iterations = i)
+    output= cv.connectedComponentsWithStats(img_erod)
+
+  # On recupere les stats de l'image erodee  
+  (nblabel2, labels2, stats2, centroids2) = output
+
+  # On commence nos nouveaux labels à nblabels2+1 pour des raisons evidentes
+  new_label = nblabel + 1
+
+  # Je récupère les labels des centroids detecte dans image erodee
+  # attention les centroids sont des couples de floats
+  centroids2_int = centroids2.astype(int)
+  labels_cents = [labels[i,j] for (i,j) in centroids2_int]
+  
+  # Je recupere les labels presentant 2 centroides ou plus
+  labels_uniq, nb_cents = np.unique(labels_cents,return_counts=True)
+  
+  labels_doubles = labels_uniq[nb_cents>1]
+
+  # Je récupère les centroïdes ... 
+  # Je modifie labels avec la méthode des milieux
+  
+  for label_act in labels_doubles:
+     
+    indices_labels = np.where(labels_cents == label_act)[0]
+    new_centroids = [centroids2_int[id] for id in indices_labels]
+    cent1 = new_centroids[0]
+    cent2 = new_centroids[1]
+
+    if (len(new_centroids)==2):
+      milieu = ((cent1[0] + cent2[0])/2,(cent1[1] + cent2[1])/2)
+
+      pix_mm_labels = np.where(labels == label_act)
+
+      for i,j in zip(pix_mm_labels[0], pix_mm_labels[1]):
+          # Si mes cellules sont alignees horizontalement
+          if (cent1[0] == cent2[0] ):
+            if ( i > milieu[0]):
+              # Je change le label de ma deuxieme cellule
+              labels[i,j] = new_label
+
+          # Si mes cellules sont alignees verticalement
+          elif ( cent1[1] == cent2[1] ):
+            # Je change le label de ma deuxieme cellule
+            if ( j > milieu[j]):
+              labels[i,j] = new_label
+
+          # Si mes cellules sont alignees diagonalement
+          # cas ou le deuxieme centroid est en bas a droite
+          elif ( (cent1[0] < cent1[0]) and (cent1[1] < cent2[1]) ):
+            # Je change le label de ma deuxieme cellule
+            if ( (i > milieu[0]) and (j > milieu[1])):
+              labels[i,j] = new_label
+
+          # Si mes cellules sont alignees diagonalement
+          # cas ou le deuxieme centroid est en bas a gauche
+          elif ( (cent1[0] < cent2[0]) and (cent1[1] > cent2[1]) ):
+            # Je change le label de ma deuxieme cellule
+            if ( (i > milieu[0]) and (j < milieu[1])):
+              labels[i,j] = new_label
+    
+    new_label+=1  
+
+  return labels
+
+print(label_list)
+print(nblabel)
+print(centroids)
+print(centroids.astype(int))
