@@ -3,4 +3,4 @@ test*
 __pycache__
 images/puit*/tresholds
 images/puit*/trajectoires
-images/puittest
+images/puittest/cell_test

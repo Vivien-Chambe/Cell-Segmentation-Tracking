@@ -345,7 +345,6 @@ class MainWindow(QMainWindow):
                 os.makedirs(puits + "/trajectoires")
             
             cv.imwrite(path, image)
-            print("Image enregistrée")
             i+=1
         
         ## On veut exporter les images obtenues dans un gif 
@@ -376,6 +375,16 @@ class MainWindow(QMainWindow):
                 for j in range(len(cell)):
                     writer.writerow([cell[j].ID, cell[j].centroid[0], cell[j].centroid[1], cell[j].time])
 
+    def test(self):
+        for i in range(30,100,10):
+            self.input_range.setText(str(i))
+            self.segmenter_all()
+            self.assigner_all()
+            self.trajectoire()
+            self.export()
+            self.final = {}
+            print("test range = " + str(i) + " terminé")
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
@@ -385,11 +394,7 @@ if __name__ == "__main__":
     if headless == "no":
         window.show()
     else:
-        window.input_range.setText(OpenTextBox("range", "range?"))
-        window.segmenter_all()
-        window.assigner_all()
-        window.trajectoire()
-        window.export()
+        window.test()
         exit()
 
     app.exec_()

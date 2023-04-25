@@ -6,6 +6,7 @@ from PyQt5.QtGui import QImage, QPixmap
 from Classes import Cell
 import numpy as np
 
+## Permets d'ouvrir une fenêtre de dialogue pour choisir une valeur
 def OpenTextBox(title,prompt):
     import tkinter as tk
     from tkinter import simpledialog
@@ -14,7 +15,7 @@ def OpenTextBox(title,prompt):
     user_input = simpledialog.askstring(title=str(title), prompt=str(prompt))
     return user_input
 
-
+# Convertit une image opencv en image QPixmap
 def convert_cv_qt(cv_img):
         """Convertir une image opencv vers une image QPixmap"""
         cv_img = cv.cvtColor(cv_img, cv.COLOR_BGR2RGB)
@@ -34,6 +35,7 @@ def get_files(path):
                         files.append(file)
         return files
 
+# Retourne la distance entre deux cellules
 def distance (coord1, coord2):
         return ((coord1[0]-coord2[0])**2 + (coord1[1]-coord2[1])**2)**0.5
 
@@ -106,7 +108,7 @@ def Segment(ListeT0: list[Cell], ListeT1: list[Cell],marginD=float('inf')):
         if max[1]>0:#cas où la note obtenue a été modifiée
             ListeT1[max[0]].ID=-1 #on retire la cellule des cellules assignables
             #ajoute l'assignation à la liste
-            print((i,max[0]))
+            #print((i,max[0]))
             out.append((i,max[0]))
     for i in range(0,len(ListeT1)):
         ListeT1[i].ID=0
