@@ -11,6 +11,9 @@ Pour pouvoir utiliser ce projet, il faut installer les bibliothèques suivantes 
 * Scipy
 * Pyqt5
 
+Pour ce faire utilisez `pip -r requirements.txt` après avoir cloné le dépöt
+
+
 ## Utilisation
 
 ### 0. Création d'une interface graphique
