@@ -1,0 +1,7 @@
+imageio
+numpy
+opencv-python
+PyQt5
+scikit-image
+scipy
+tk
