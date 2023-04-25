@@ -19,8 +19,7 @@ Pour créer une interface graphique, il faut utiliser la bibliothèque Pyqt5. No
 
 ### 1. Segmenter les cellules
 
-On a deux options 
-Soit on calcule toutes les coordonnées des cellules dans chaque image puis on réalise l'assignation 
+Pour segmenter toutes les images
 
 ### 2. Suivre les cellules
 
