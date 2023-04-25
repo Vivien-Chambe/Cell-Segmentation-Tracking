@@ -12,6 +12,7 @@ class Cell:
         self.ID = ID
         self.centroid = (x, y)
         self.surface = surface
+        self.time = 0
 
     def getID(self):
         return self.ID
@@ -32,11 +33,6 @@ class Cell:
         self.surface = surface
         
 
-
-class Labeliser:
-    def __init__(self, cells):
-        self.cells = cells
-        self.labels = []
 
         
 

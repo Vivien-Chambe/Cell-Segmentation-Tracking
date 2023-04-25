@@ -6,6 +6,14 @@ from PyQt5.QtGui import QImage, QPixmap
 from Classes import Cell
 import numpy as np
 
+def OpenTextBox(title,prompt):
+    import tkinter as tk
+    from tkinter import simpledialog
+    root = tk.Tk()
+    root.withdraw()
+    user_input = simpledialog.askstring(title=str(title), prompt=str(prompt))
+    return user_input
+
 
 def convert_cv_qt(cv_img):
         """Convertir une image opencv vers une image QPixmap"""
@@ -21,14 +29,15 @@ def get_files(path):
         import os
         files = []
         for file in os.listdir(path):
-                if file.endswith(".tif"):
+                print(file)
+                if file.endswith(".tif") or file.endswith(".png") or file.endswith(".jpg"):
                         files.append(file)
         return files
 
 def distance (coord1, coord2):
         return ((coord1[0]-coord2[0])**2 + (coord1[1]-coord2[1])**2)**0.5
 
-## Function that solve a linear assignment problem 
+# Fonction pour résoudre le problème d'assignation linéaire à l'aide de la méthode Hongroise
 # Entrée: deux listes de Cellules (cells1 et cells2)
 # Sortie: une liste de tuples (cell1, cell2) qui sont les cellules qui correspondent
 def solve_linear_assignment (cells1, cells2):
@@ -51,6 +60,7 @@ def solve_linear_assignment (cells1, cells2):
                 cells2[corr[1]-1].ID = corr[0]
         return correspondance
 
+
 def cost(dist:float,surf:float,ver=0):
     match ver:
         case 0:
@@ -63,7 +73,7 @@ def cost(dist:float,surf:float,ver=0):
         case _ :
             return 0
 
-def Segment(ListeT0: list[Cell], ListeT1: list[Cell],marginD=float('inf'),ver=0):
+def Segment(ListeT0: list[Cell], ListeT1: list[Cell],marginD=float('inf')):
     """
     Renvoie une liste de paire de taille len(ListeT0), 
     celle ci est l'assignation linéaire des point de ListeT0 avec ceux de Liste T1, 
@@ -89,7 +99,7 @@ def Segment(ListeT0: list[Cell], ListeT1: list[Cell],marginD=float('inf'),ver=0)
                     surf=0.000000000000000000000000001
                 if (dist==0):
                     dist=0.000000000000000000000000001
-                grade =cost(dist,surf,ver)
+                grade =cost(dist,surf)
                 #comparaison avec la note la plus haute
                 if (max[1]<grade and ListeT1[j].ID!=-1):
                     max=(j,grade)
@@ -102,24 +112,30 @@ def Segment(ListeT0: list[Cell], ListeT1: list[Cell],marginD=float('inf'),ver=0)
         ListeT1[i].ID=0
     for i in out:
         ListeT1[i[1]].ID=ListeT0[i[0]].ID
+        ListeT1[i[1]].time=ListeT0[i[0]].time
     return out
 
 def getHighestID(ListeTi:list[Cell]):
     #/!\ Il faut quand même comparer la sortie avec celle du temps précédent 
-    maxIDs=0
+    out=0
     for i in ListeTi:
-        if i.ID>maxIDs:
-            maxIDs=i.ID
-    return maxIDs
+        if i.ID>out:
+            out=i.ID
+    return out
 
-def updateIDs(ListeT1:list[Cell],maxIDs):
+def updateIDs(ListeT1:list[Cell],maxIDs,time):
     it=1
     for i in ListeT1:
         if i.ID==0:
             #on crée un nouveau ID pour les cellules qui n'en ont pas afin de créer un nouveau tracé
             i.ID=maxIDs+it
             it+=1
+            i.time=time
+        print(i.ID)
 
+def initT0(ListeT0:list[Cell]):
+    for i in ListeT0:
+        i.time=0
 
 print("annexes.py loaded")
 

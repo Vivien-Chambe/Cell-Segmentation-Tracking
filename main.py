@@ -1,5 +1,6 @@
 import random
 import sys
+import os
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap
@@ -9,16 +10,21 @@ from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QPushButton, QVBo
 import cv2 as cv
 import numpy as np
 import csv
-from time import sleep
 
 from segmentation import erode, dilate, opening, closing, labeliser_mask
-from annexes import convert_cv_qt, get_files, distance, solve_linear_assignment, Segment,updateIDs,getHighestID
+from annexes import convert_cv_qt, get_files,solve_linear_assignment, Segment,updateIDs,getHighestID,OpenTextBox, initT0
 from Classes import Cell
 
+from tkinter import Tk     # from tkinter import Tk for Python 3.x
+from tkinter.filedialog import askdirectory
 
 colors = [(255,0,0),(0,255,0),(0,0,255),(255,255,0),(255,0,255),(0,255,255),(255,128,0),(128,255,0),(0,255,128),(0,128,255),(128,0,255),(255,0,128),(0,255,255),(255,255,0),(255,0,255),(0,255,255),(255,128,0),(128,255,0),(0,255,128),(0,128,255),(128,0,255),(255,0,128),(0,255,255),(255,255,0),(255,0,255),(0,255,255)]
-puits = "images/puit03"
 
+
+
+# Pour choisir le dossier où se trouvent les images	
+Tk().withdraw()
+puits = askdirectory()
 
 class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -124,7 +130,8 @@ class MainWindow(QMainWindow):
 
         ## Ajouter un input pour changer la valeur de la range 
         self.input_range = QLineEdit()
-        self.input_range.setText(str(10))
+
+        self.input_range.setText(str(50))
         layout_edit.addWidget(self.input_range)
 
         ## Bouton pour faire l'assignation des cellules
@@ -266,6 +273,9 @@ class MainWindow(QMainWindow):
             for cell in self.segmentations[-1]:
                 cv.circle(rgb, (int(cell.centroid[0]),int(cell.centroid[1])), 3, (0,0,255), -1)
                 cv.putText(rgb, str(cell.ID), (int(cell.centroid[0]),int(cell.centroid[1])), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1, cv.LINE_AA)
+
+            if not os.path.exists(puits + "/tresholds"):
+                os.makedirs(puits + "/tresholds")
             cv.imwrite(puits + "/tresholds/" + nom_fichier[:-4] + "_segmentation.jpg", rgb)
             self.treshold = None
 
@@ -281,8 +291,10 @@ class MainWindow(QMainWindow):
     ## On veut que cette fonction résolve un problème d'assignation linéaire sur les cellules détectées dans chaque image 
     def assigner_all (self):
         maxIDs = 0
+        timeactu = 0
         for cell in self.segmentations[0]:
             self.final[cell.ID] = [cell]
+        initT0(self.segmentations[0])
         for i in range(1,len(self.segmentations)):
             #V1
             #res = solve_linear_assignment(self.segmentations[i-1], self.segmentations[i])
@@ -299,7 +311,7 @@ class MainWindow(QMainWindow):
             a=getHighestID(self.segmentations[i-1])
             if  a> maxIDs:
                 maxIDs = a
-            updateIDs(self.segmentations[i],maxIDs)
+            updateIDs(self.segmentations[i],maxIDs,timeactu)
             
             for corres in self.segmentations[i]:
                 if corres.ID not in self.final.keys():
@@ -307,45 +319,49 @@ class MainWindow(QMainWindow):
                     self.final[corres.ID].append(corres)
                 else:
                     self.final[corres.ID].append(corres)
+            timeactu+=1
+        print(f"Nombre de cellules détectées: {len(self.final)}")
             
-
-
-
     def trajectoire(self):
-        self.index_image = 0
-        image = cv.imread(puits + "/" + self.noms_fichiers[0],cv.IMREAD_COLOR)
-        for cell in self.final.values():
-            #image = cv.imread(puits + "/" + self.noms_fichiers[0],cv.IMREAD_COLOR)
-            color = random.choice(colors)
-            print(f"Cellule n{cell[0].ID}")
-            cv.circle(image,(int(cell[0].centroid[0]),int(cell[0].centroid[1])),5,(255,0,0),-1) # Point de départ
+        ## On veut afficher les trajectoires des cellules image par image 
+
+        i = 0
+        for fichier in self.noms_fichiers:
             
-            # for i in range(len(cell)-1):
-            #     # On veut changer l'image de fond à chaque fois tracé
-            #     image = cv.imread(puits + "/" + self.noms_fichiers[i],cv.IMREAD_COLOR)
-            #     pt1 = (int(cell[i].centroid[0]),int(cell[i].centroid[1]))
-            #     pt2 = (int(cell[i+1].centroid[0]),int(cell[i+1].centroid[1]))
-            #     print(pt1,pt2)
-            #     cv.line(image, pt1, pt2, color, 2)   
-            #     cv.imshow("Hop",image)  
-            #     cv.waitKey(0)
-            #     #self.label.setPixmap(convert_cv_qt(image))
-
-            # # On affiche tous les tracés
-            for i in range(len(cell)-1):
-                pt1 = (int(cell[i].centroid[0]),int(cell[i].centroid[1]))
-                pt2 = (int(cell[i+1].centroid[0]),int(cell[i+1].centroid[1]))
-                cv.line(image, pt1, pt2, color, 2)
-            self.label.setPixmap(convert_cv_qt(image))
-            self.index_image += 1
-        cv.imshow("Hop",image)
-
-        #enregistrer le résultat
-        path = puits + "/trajectoires/trajectoire_" +str(self.input_range.text())+".jpg"
-        print(path)
-        cv.imwrite(path, image)
-        print("Image enregistrée")
+            image = cv.imread(puits + "/" + fichier)
+            image = cv.normalize(image, None, 0, 255, cv.NORM_MINMAX)
+            for cell in self.final.values():
+                for j in range(len(cell)-1):
+                    color = colors[cell[0].ID%len(colors)]
+                    cv.line(image, (int(cell[j].centroid[0]),int(cell[j].centroid[1])), (int(cell[j+1].centroid[0]),int(cell[j+1].centroid[1])),color, 2)
+                    cv.circle(image, (int(cell[j].centroid[0]),int(cell[j].centroid[1])), 3, color, -1)            
+            
+            # cv.imshow("Trajectoire", image)
+            # cv.waitKey(0)
+            # cv.destroyAllWindows()
+            #enregistrer le résultat
+            path = puits + "/trajectoires/trajectoire"+ str(i) + "_" +str(self.input_range.text())+".jpg"
+            if not os.path.exists(puits + "/trajectoires"):
+                os.makedirs(puits + "/trajectoires")
+            
+            cv.imwrite(path, image)
+            print("Image enregistrée")
+            i+=1
         
+        ## On veut exporter les images obtenues dans un gif 
+        # On crée une liste de toutes les images
+        i = 0
+        import imageio
+        images = []
+        for fichier in self.noms_fichiers:
+            images.append(imageio.imread(puits + "/trajectoires/trajectoire"+ str(i) + "_" +str(self.input_range.text())+".jpg"))
+            os.remove(puits + "/trajectoires/trajectoire"+ str(i) + "_" +str(self.input_range.text())+".jpg")
+            i+=1
+        # On enregistre le gif
+        imageio.mimsave(puits + "/trajectoires/trajectoire_" +str(self.input_range.text())+".gif", images, fps=30)
+        print("Gif enregistré")
+
+
         self.final = {}
     def export(self):
 
@@ -353,23 +369,27 @@ class MainWindow(QMainWindow):
         ## On veut exporter le numéro de la cellule, le centre de la cellule 
 
         #On ouvre un fichier csv
-        with open(puits + "/trajectoires/trajectoire_" +str(self.input_range.text())+".csv", 'w', newline='') as file:
-            writer = csv.writer(file)
-            #On écrit le header
-            writer.writerow(["ID", "Centre", "Temps", "Aire"])
-            #On écrit les données
+        with open(puits + "/trajectoires/trajectoire_" +str(self.input_range.text())+".csv", 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile, delimiter=';')
+            writer.writerow(["cellule", "x", "y", "t"])
             for cell in self.final.values():
-                writer.writerow([cell[0].ID, cell[0].centroid, 0,   cell[0].surface])
-                for i in range(len(cell)-1):
-                    writer.writerow([cell[i].ID, cell[i].centroid, i+1, cell[i].surface])
-            
-        print("Fichier enregistré")
-
+                for j in range(len(cell)):
+                    writer.writerow([cell[j].ID, cell[j].centroid[0], cell[j].centroid[1], cell[j].time])
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     window = MainWindow()
-    window.show()
+    
+    headless = OpenTextBox("headless", "headless yes/no")
+    if headless == "no":
+        window.show()
+    else:
+        window.input_range.setText(OpenTextBox("range", "range?"))
+        window.segmenter_all()
+        window.assigner_all()
+        window.trajectoire()
+        window.export()
+        exit()
 
     app.exec_()
