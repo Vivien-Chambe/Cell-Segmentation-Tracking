@@ -1,4 +1,5 @@
 import textwrap
+import math 
 import cv2 as cv
 import numpy as np
 import scipy as sp
@@ -11,15 +12,15 @@ img = cv.imread("images/puit02/t000.tif")
 img_gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
 # Affichage si besoin
-cv.imshow('Avant normalisation:',img_gray)
+#cv.imshow('Avant normalisation:',img_gray)
 
 # Normalisation de l'image 
 img_norm = cv.normalize(img_gray, None, 0, 255, cv.NORM_MINMAX)
 
 # Affichage si besoin
-cv.imshow('Apres normalisation:',img_norm)
+#cv.imshow('Apres normalisation:',img_norm)
 
-cv.waitKey(0)
+#cv.waitKey(0)
 # Binarisation ret = valeur du threshold
 ret, img_bin = cv.threshold( img_norm, 122,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
 
@@ -437,7 +438,7 @@ def detection_newcents(img,nb_it):
   
   return mes_cents_fin,labels
 """
-
+"""
 def detection_newcents(img,nb_it):
 
   output = cv.connectedComponentsWithStats(img)
@@ -472,6 +473,7 @@ def detection_newcents(img,nb_it):
      
     indices_labels = np.where(labels_cents == label_act)[0]
     new_centroids = [centroids2_int[id] for id in indices_labels]
+
     cent1 = new_centroids[0]
     cent2 = new_centroids[1]
 
@@ -515,3 +517,83 @@ print(label_list)
 print(nblabel)
 print(centroids)
 print(centroids.astype(int))
+"""
+
+# version avec droite perpendiculaire
+
+def getPerpCoord(aX, aY, bX, bY, length):
+    vX = bX-aX
+    vY = bY-aY
+    #print(str(vX)+" "+str(vY))
+    if(vX == 0 or vY == 0):
+        return 0, 0, 0, 0
+    mag = math.sqrt(vX*vX + vY*vY)
+    vX = vX / mag
+    vY = vY / mag
+    temp = vX
+    vX = 0-vY
+    vY = temp
+    cX = bX + vX * length
+    cY = bY + vY * length
+    dX = bX - vX * length
+    dY = bY - vY * length
+    return int(cX), int(cY), int(dX), int(dY)
+
+
+def detection_newcents(img,nb_it):
+
+  output = cv.connectedComponentsWithStats(img)
+  (nblabel, labels, stats, centroids) = output
+  
+  # On effectue nb_it erosions sur l'image
+  img_erod = cv.erode(img,kernel,iterations = 1)
+  for i in range(2,nb_it):
+    img_erod = cv.erode(img_erod,kernel,iterations = i)
+    output= cv.connectedComponentsWithStats(img_erod)
+
+  # On recupere les stats de l'image erodee  
+  (nblabel2, labels2, stats2, centroids2) = output
+
+  # Je récupère les labels des centroids detecte dans image erodee
+  # attention les centroids sont des couples de floats
+  centroids2_int = centroids2.astype(int)
+  labels_cents = [labels[i,j] for (i,j) in centroids2_int]
+  
+  # Je recupere les labels presentant 2 centroides ou plus
+  labels_uniq, nb_cents = np.unique(labels_cents,return_counts=True)
+  
+  labels_doubles = labels_uniq[nb_cents>1]
+
+  # Je récupère les centroïdes ... 
+  # Je modifie labels avec la méthode des milieux
+  
+  for label_act in labels_doubles:
+     
+    indices_labels = np.where(labels_cents == label_act)[0]
+    new_centroids = [centroids2_int[id] for id in indices_labels]
+
+    # Si je trouve 2 centroides je les recupère et je calcule la perpendiculaire en leur milieu 
+    # et je la trace
+    if (len(new_centroids)==2):      
+      cent1 = new_centroids[0]
+      cent2 = new_centroids[1]
+
+      aX, aY, bX, bY = getPerpCoord(cent1[0],cent1[1],cent2[0],cent2[1],50)
+
+      #tracer une ligne entre les deux cercles
+      cv.line(img_erod,(aX,aY),(bX,bY),(255,255,255),1)
+
+  
+  return img_erod
+
+
+cv.imshow('Apres binarisation: ',img_bin)
+
+res = detection_newcents(img_bin, 2)
+
+cv.imshow('Avec perpendiculaire: ',res)
+
+cv.waitKey(0)
+
+
+
