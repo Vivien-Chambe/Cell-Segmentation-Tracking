@@ -12,7 +12,7 @@ import numpy as np
 import csv
 
 from segmentation import erode, dilate, opening, closing, labeliser_mask
-from annexes import convert_cv_qt, get_files,solve_linear_assignment, Segment,updateIDs,getHighestID,OpenTextBox, initT0
+from annexes import convert_cv_qt, get_files,solve_linear_assignment, Segment,Segment2,updateIDs,getHighestID,OpenTextBox, initT0
 from Classes import Cell
 
 from tkinter import Tk     # from tkinter import Tk for Python 3.x
@@ -334,7 +334,8 @@ class MainWindow(QMainWindow):
                 for j in range(len(cell)-1):
                     color = colors[cell[0].ID%len(colors)]
                     cv.line(image, (int(cell[j].centroid[0]),int(cell[j].centroid[1])), (int(cell[j+1].centroid[0]),int(cell[j+1].centroid[1])),color, 2)
-                    cv.circle(image, (int(cell[j].centroid[0]),int(cell[j].centroid[1])), 3, color, -1)            
+                    cv.circle(image, (int(cell[j].centroid[0]),int(cell[j].centroid[1])), 3, color, -1)
+                     
             
             # cv.imshow("Trajectoire", image)
             # cv.waitKey(0)
@@ -345,7 +346,6 @@ class MainWindow(QMainWindow):
                 os.makedirs(puits + "/trajectoires")
             
             cv.imwrite(path, image)
-            print("Image enregistrée")
             i+=1
         
         ## On veut exporter les images obtenues dans un gif 
@@ -370,11 +370,26 @@ class MainWindow(QMainWindow):
 
         #On ouvre un fichier csv
         with open(puits + "/trajectoires/trajectoire_" +str(self.input_range.text())+".csv", 'w', newline='') as csvfile:
-            writer = csv.writer(csvfile, delimiter=';')
-            writer.writerow(["cellule", "x", "y", "t"])
-            for cell in self.final.values():
-                for j in range(len(cell)):
-                    writer.writerow([cell[j].ID, cell[j].centroid[0], cell[j].centroid[1], cell[j].time])
+            fieldnames = ["cellule", "x", "y", "t"]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            #On écrit les coordonnées de chaque cellule à chaque instant
+            for cells in self.final.values():
+                for j in range(len(cells)):
+                    writer.writerow({"cellule": cells[j].ID, "x": cells[j].centroid[0], "y": cells[j].centroid[1], "t": cells[j].time})
+        print("Fichier csv enregistré")
+
+
+
+    def test(self):
+        self.segmenter_all()
+        for i in range(30,100,10):
+            self.input_range.setText(str(i))
+            self.assigner_all()
+            self.export()
+            self.trajectoire()
+            self.final = {}
+            print("test range = " + str(i) + " terminé")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -385,11 +400,7 @@ if __name__ == "__main__":
     if headless == "no":
         window.show()
     else:
-        window.input_range.setText(OpenTextBox("range", "range?"))
-        window.segmenter_all()
-        window.assigner_all()
-        window.trajectoire()
-        window.export()
+        window.test()
         exit()
 
     app.exec_()

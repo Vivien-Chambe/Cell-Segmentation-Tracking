@@ -1,6 +1,7 @@
 import cv2 as cv
 import numpy as np
 from Classes import Cell
+import math
 
 
 def erode (img, kernel_size = 3, iterations = 1):
@@ -27,9 +28,29 @@ def matrix_to_list(matrix):
           matrix_list.append(matrix[i,j])
   return matrix_list
 
-def detection_newcents(img,nb_it):
+def getPerpCoord(aX, aY, bX, bY, length):
+    vX = bX-aX
+    vY = bY-aY
+    #print(str(vX)+" "+str(vY))
+    if(vX == 0 or vY == 0):
+        return 0, 0, 0, 0
+    mag = math.sqrt(vX*vX + vY*vY)
+    vX = vX / mag
+    vY = vY / mag
+    temp = vX
+    vX = 0-vY
+    vY = temp
+    cX = bX + vX * length
+    cY = bY + vY * length
+    dX = bX - vX * length
+    dY = bY - vY * length
+    return int(cX), int(cY), int(dX), int(dY)
+
+
+def detection_newcents2(img,nb_it):
+  
   kernel = np.ones((5,5),np.uint8)
-  output= cv.connectedComponentsWithStats(img)
+  output = cv.connectedComponentsWithStats(img)
   (nblabel, labels, stats, centroids) = output
   
   # On effectue nb_it erosions sur l'image
@@ -40,76 +61,66 @@ def detection_newcents(img,nb_it):
 
   # On recupere les stats de l'image erodee  
   (nblabel2, labels2, stats2, centroids2) = output
-  label_list = matrix_to_list(labels2)
-  # On commence nos nouveaux labels à nblabels2+1 pour des raisons evidentes
-  new_label = nblabel + 1
 
-  # On utilise np.where pour determiner les indices des pixels de meme labels
-  # Pour chaque labels de l'image errodée
-  for label_act in label_list: 
-    # Je me créé un compteur de centroids et deux listes de centroids
-    nb_cent = 0  
-    mes_cents = []
-    mes_cents_fin = []
-    # Je recupere les indices de tous les pixels contenant le meme label
-    pix_mm_labels = np.where(labels == label_act)
-    
-    # Pour chaque centroids dans l'image erodee
-    for cent in centroids2:
-      # Si il appartient a ma liste des pixels de meme labels
-      if ( (int(cent[0]) in pix_mm_labels[0]) and (int(cent[1]) in pix_mm_labels[1]) ):
-        # J'incrémente mon compteur
-        nb_cent += 1
-        mes_cents.append((int(cent[0]),int(cent[1])))
-    
-      # Si j'ai trouvé 2 centroids 
-      # Je modifie ma matrice avec la methode du milieu
-      if (nb_cent == 2):
-        mes_cents_fin.append(mes_cents[0])
-        mes_cents_fin.append(mes_cents[1])
-        milieu = ((mes_cents[0][0] + mes_cents[0][1])/2,(mes_cents[1][0] + mes_cents[1][1])/2)
-        for i in pix_mm_labels[0]:
-          for j in pix_mm_labels[1]:
-
-            # Si mes cellules sont alignees horizontalement
-            if ( mes_cents[0][0] == mes_cents[1][0] ):
-              if ( i > milieu[0]):
-                # Je change le label de ma deuxieme cellule
-                labels[i,j] = new_label
-
-            # Si mes cellules sont alignees verticalement
-            elif ( mes_cents[0][1] == mes_cents[1][1] ):
-              # Je change le label de ma deuxieme cellule
-              if ( j > milieu[j]):
-                labels[i,j] = new_label
-
-            # Si mes cellules sont alignees diagonalement
-            # cas ou le deuxieme centroid est en bas a droite
-            elif ( (mes_cents[0][0] < mes_cents[1][0]) and (mes_cents[0][1] < mes_cents[1][1]) ):
-              # Je change le label de ma deuxieme cellule
-              if ( (i > milieu[0]) and (j > milieu[1])):
-                labels[i,j] = new_label
-
-            # Si mes cellules sont alignees diagonalement
-            # cas ou le deuxieme centroid est en bas a gauche
-            elif ( (mes_cents[0][0] < mes_cents[1][0]) and (mes_cents[0][1] > mes_cents[1][1]) ):
-              # Je change le label de ma deuxieme cellule
-              if ( (i > milieu[0]) and (j < milieu[1])):
-                labels[i,j] = new_label
-      else :
-        mes_cents_fin.append(cent)
-
-
-    new_label+=1
-    pix_mm_labels = []
+  # Je récupère les labels des centroids detecte dans image erodee
+  # attention les centroids sont des couples de floats
+  centroids2_int = centroids2.astype(int)
+  labels_cents = [labels[i,j] for (i,j) in centroids2_int]
   
-  return mes_cents_fin,labels
-def labeliser_mask (img):
-    (nblabel, labels, stats, centroids)= cv.connectedComponentsWithStats(img) # On veut récupérer le nombre de cellules, les labels, les stats et les centroides
-    # print("Nombre de cellules : ", len(centroids) - 1)
-    # centroids,labels = detection_newcents(img,3)
-    # print("Nombre de cellules après correction : ", len(centroids) - 1)
+  # Je recupere les labels presentant 2 centroides ou plus
+  labels_uniq, nb_cents = np.unique(labels_cents,return_counts=True)
+  
+  labels_doubles = labels_uniq[nb_cents>1]
+  print(labels_doubles)
+  # Je récupère les centroïdes ... 
+  # Je modifie labels avec la méthode des milieux
+  
+  for label_act in labels_doubles:
+     
+    indices_labels = np.where(labels_cents == label_act)[0]
+    new_centroids = [centroids2_int[id] for id in indices_labels]
 
+    # Si je trouve 2 centroides je les recupère et je calcule la perpendiculaire en leur milieu 
+    # et je la trace
+    
+    if (len(new_centroids)==2):      
+      cent1 = new_centroids[0]
+      cent2 = new_centroids[1]
+
+      print("cent1 : "+str(cent1))
+      print("cent2 : "+str(cent2))
+
+
+
+      x1 = int(cent1[0])
+      y1 = int(cent1[1])
+      x2 = int(cent2[0])
+      y2 = int(cent2[1])
+
+
+      cv.line(img,(x1,y1),(x2,y2),(255,255,255),5)
+
+      midX = (x1+x2)/2
+      midY = (y1+y2)/2
+
+      aX, aY, bX, bY = getPerpCoord(x1,y1,int(midX),int(midY),50)
+
+      #tracer une ligne entre les deux cercles
+      cv.line(img,(aX,aY),(bX,bY),(255,255,255),5)
+
+  
+  return img
+
+
+def labeliser_mask (img):
+    # cv.imshow("img",img)
+    # cv.imshow("return img",detection_newcents2(img,5))
+    # cv.imshow("modified img",img)
+
+    # cv.waitKey(0)
+    (nblabel, labels, stats, centroids)= cv.connectedComponentsWithStats(img) # On veut récupérer le nombre de cellules, les labels, les stats et les centroides
+    #print("Nombre de cellules : ", len(centroids) - 1)
+    
 
     ## On veut afficher les centroides sur l'image
     # On veut garder une trace des cellules et de leurs stats
