@@ -30,9 +30,10 @@ def get_files(path):
         import os
         files = []
         for file in os.listdir(path):
-                print(file)
+                #print(file)
                 if file.endswith(".tif") or file.endswith(".png") or file.endswith(".jpg"):
                         files.append(file)
+        print("Found "+str(len(files))+" files in "+str(path))
         return files
 
 # Retourne la distance entre deux cellules
@@ -117,6 +118,57 @@ def Segment(ListeT0: list[Cell], ListeT1: list[Cell],marginD=float('inf')):
         ListeT1[i[1]].time=ListeT0[i[0]].time
     return out
 
+def average(Liste:list[Cell]):
+    avg=0
+    for i in Liste:
+        avg+=i.surface
+    avg=avg/len(Liste)
+    return avg
+
+def Segment2(ListeT0: list[Cell], ListeT1: list[Cell],marginD=float('inf')):
+    """
+    Renvoie une liste de paire de taille len(ListeT0), 
+    celle ci est l'assignation linéaire des point de ListeT0 avec ceux de Liste T1, 
+    les couples étant les indices de chaque cellule dans leur liste respective.
+    marginD peut être spécifié pour avoir une ROI autour de la cellule étudié, 
+    évitant l'évaluation de cellule trop eloignée, elle est par défaut à +inf mais peut être 
+    choisi si besoin (préférables)
+    """
+    out=[]
+    marginS=average(ListeT0)/2
+    for i in range(0,len(ListeT0)):
+        ix,iy=ListeT0[i].centroid
+        isurf=ListeT0[i].surface
+        max=(-1,0)#couple initalisé aux valeurs de base
+        for j in range(0,len(ListeT1)):
+            jx,jy=ListeT1[j].centroid
+            jsurf=ListeT1[j].surface
+            #paramêtres de la note
+            dist=np.sqrt(pow(ix-jx,2)+pow(iy-jy,2))
+            if (dist<marginD):
+            #calcul de la note, peut être modulé
+                surf=abs(isurf-jsurf)
+                if (surf<marginS):  
+                    if (surf==0):
+                        surf=0.000000000000000000000000001
+                    if (dist==0):
+                        dist=0.000000000000000000000000001
+                    grade =cost(dist,surf)
+                    #comparaison avec la note la plus haute
+                    if (max[1]<grade and ListeT1[j].ID!=-1):
+                        max=(j,grade)
+        if max[1]>0:#cas où la note obtenue a été modifiée
+            ListeT1[max[0]].ID=-1 #on retire la cellule des cellules assignables
+            #ajoute l'assignation à la liste
+            print((i,max[0]))
+            out.append((i,max[0]))
+    for i in range(0,len(ListeT1)):
+        ListeT1[i].ID=0
+    for i in out:
+        ListeT1[i[1]].ID=ListeT0[i[0]].ID
+        ListeT1[i[1]].time=ListeT0[i[0]].time
+    return out
+
 def getHighestID(ListeTi:list[Cell]):
     #/!\ Il faut quand même comparer la sortie avec celle du temps précédent 
     out=0
@@ -133,7 +185,8 @@ def updateIDs(ListeT1:list[Cell],maxIDs,time):
             i.ID=maxIDs+it
             it+=1
             i.time=time
-        print(i.ID)
+            print("time : "+str(i.time))
+        #print(i.ID)
 
 def initT0(ListeT0:list[Cell]):
     for i in ListeT0:
