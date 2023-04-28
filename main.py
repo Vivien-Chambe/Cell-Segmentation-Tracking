@@ -183,13 +183,13 @@ class MainWindow(QMainWindow):
         ## Mettre l'image dans le label
         self.label.setPixmap(convert_cv_qt(thresh))
     
-    def erosion(self,ite):
+    def erosion(self):
         ## Vérifier si l'image a été treshold ou non
         if self.treshold is None: 
             return
         ## Appliquer un erosion
         kernel = np.ones((5, 5), np.uint8)
-        self.treshold = cv.erode(self.treshold, kernel, iterations=ite)
+        self.treshold = cv.erode(self.treshold, kernel, iterations=int(self.input_erosion.text()))
 
         ## Mettre l'image dans le label
         self.label.setPixmap(convert_cv_qt(self.treshold))
@@ -263,7 +263,7 @@ class MainWindow(QMainWindow):
             self.label.setPixmap(convert_cv_qt(self.image))
             self.gaussian_blur()
             self.mask()
-            self.erosion(int(self.input_erosion.text()))
+            self.erosion()
             self.opening()
             self.closing()
             self.segmenter()
@@ -335,8 +335,6 @@ class MainWindow(QMainWindow):
                     color = colors[cell[0].ID%len(colors)]
                     cv.line(image, (int(cell[j].centroid[0]),int(cell[j].centroid[1])), (int(cell[j+1].centroid[0]),int(cell[j+1].centroid[1])),color, 2)
                     cv.circle(image, (int(cell[j].centroid[0]),int(cell[j].centroid[1])), 3, color, -1)
-                     
-            
             # cv.imshow("Trajectoire", image)
             # cv.waitKey(0)
             # cv.destroyAllWindows()
@@ -367,7 +365,9 @@ class MainWindow(QMainWindow):
 
         ## On veut exporter les coordonnées des cellules dans un fichier csv
         ## On veut exporter le numéro de la cellule, le centre de la cellule 
-
+        path = puits + "/trajectoires/trajectoire_" +str(self.input_range.text())+".csv"
+        if not os.path.exists(puits + "/trajectoires"):
+            os.makedirs(puits + "/trajectoires")
         #On ouvre un fichier csv
         with open(puits + "/trajectoires/trajectoire_" +str(self.input_range.text())+".csv", 'w', newline='') as csvfile:
             fieldnames = ["cellule", "x", "y", "t"]
