@@ -1,6 +1,6 @@
 # Cell-Segmentation-Tracking
 
-Le but de ce projet est de segmenter les cellules d'une image et de les suivre dans le temps. Pour cela, nous avons utilisé le langage de programmation Python avec les bibliothèques OpenCV Numpy et Scipy.
+Le but de ce projet est de segmenter les cellules d'une image et de les suivre dans le temps. Pour cela, nous avons utilisé le langage de programmation Python avec les bibliothèques OpenCV Numpy et Scipy. Pour en savoir + sur le sujet et le déroulement du projet voir le CompteRendu.pdf
 
 ## Prérequis
 
